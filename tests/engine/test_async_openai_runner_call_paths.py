@@ -371,11 +371,11 @@ def _build_runner_with_steps(
 
     post_calls: list[dict[str, Any]] = []
 
-    def _session_factory() -> _FakeClientSession:
+    def _session_factory(*, trust_env: bool) -> _FakeClientSession:
         """创建会话桩。
 
         Args:
-            无。
+            trust_env: 是否读取环境代理配置，必须为 True。
 
         Returns:
             会话对象。
@@ -384,6 +384,7 @@ def _build_runner_with_steps(
             RuntimeError: 创建失败时抛出。
         """
 
+        assert trust_env is True
         session = _FakeClientSession(steps=steps, post_calls=post_calls)
         if created_sessions is not None:
             created_sessions.append(session)
@@ -579,7 +580,7 @@ async def test_call_cancelled_during_post_enter_raises_cancelled_error(
             return _BlockingPostContext()
 
     fake_aiohttp = SimpleNamespace(
-        ClientSession=lambda: _BlockingClientSession(),
+        ClientSession=lambda *, trust_env: _BlockingClientSession(),
         ClientTimeout=lambda **kwargs: kwargs,
         ClientError=_FakeClientError,
     )
@@ -636,7 +637,7 @@ async def test_call_outer_task_cancel_cleans_inflight_post_enter_task(
             return _BlockingPostContext()
 
     fake_aiohttp = SimpleNamespace(
-        ClientSession=lambda: _BlockingClientSession(),
+        ClientSession=lambda *, trust_env: _BlockingClientSession(),
         ClientTimeout=lambda **kwargs: kwargs,
         ClientError=_FakeClientError,
     )
@@ -989,7 +990,7 @@ async def test_run_tool_call_cancelled_and_constructor(monkeypatch: pytest.Monke
     """
 
     fake_aiohttp = SimpleNamespace(
-        ClientSession=lambda: None,
+        ClientSession=lambda *, trust_env: None,
         ClientTimeout=lambda **kwargs: kwargs,
         ClientError=_FakeClientError,
     )
@@ -1097,7 +1098,19 @@ async def test_call_uses_model_total_timeout_and_stream_idle_timeout(monkeypatch
     ]
     post_calls: list[dict[str, Any]] = []
 
-    def _session_factory() -> _FakeClientSession:
+    def _session_factory(*, trust_env: bool) -> _FakeClientSession:
+        """创建读取环境代理配置的会话桩。
+
+        Args:
+            trust_env: 是否读取环境代理配置。
+
+        Returns:
+            当前测试的会话桩。
+
+        Raises:
+            AssertionError: 未启用环境代理时抛出。
+        """
+        assert trust_env is True
         return _FakeClientSession(
             steps=[
                 _PostStep(
@@ -1219,7 +1232,19 @@ async def test_call_swallows_aexit_cleanup_exception_and_logs_warn(
     session_holder: dict[str, _SingleStepSession] = {}
     all_sessions: list[_SingleStepSession] = []
 
-    def _session_factory() -> _SingleStepSession:
+    def _session_factory(*, trust_env: bool) -> _SingleStepSession:
+        """创建读取环境代理配置的会话桩。
+
+        Args:
+            trust_env: 是否读取环境代理配置。
+
+        Returns:
+            当前测试的会话桩。
+
+        Raises:
+            AssertionError: 未启用环境代理时抛出。
+        """
+        assert trust_env is True
         sess = _SingleStepSession()
         session_holder["session"] = sess
         all_sessions.append(sess)
@@ -1332,7 +1357,19 @@ async def test_call_retries_with_new_session_after_aexit_cleanup_failure(
                 raise RuntimeError("post 队列已耗尽")
             return post_queue.pop(0)
 
-    def _session_factory() -> _QueueSession:
+    def _session_factory(*, trust_env: bool) -> _QueueSession:
+        """创建读取环境代理配置的会话桩。
+
+        Args:
+            trust_env: 是否读取环境代理配置。
+
+        Returns:
+            当前测试的会话桩。
+
+        Raises:
+            AssertionError: 未启用环境代理时抛出。
+        """
+        assert trust_env is True
         sess = _QueueSession()
         sessions_seen.append(sess)
         return sess

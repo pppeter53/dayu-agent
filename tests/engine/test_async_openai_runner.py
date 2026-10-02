@@ -1076,6 +1076,7 @@ class TestAsyncOpenAIRunnerCall:
             payload = mock_session_inst.post.call_args.kwargs["json"]
             assert payload["foo"] == "override"
             assert payload["max_tokens"] == 10
+            mock_session.assert_called_once_with(trust_env=True)
             mock_session_inst.close.assert_not_awaited()
 
             await runner.close()

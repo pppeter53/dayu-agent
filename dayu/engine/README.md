@@ -112,6 +112,7 @@ class AsyncRunner(Protocol):
 
 `AsyncOpenAIRunner` 当前稳定行为补充：
 - `AsyncRunner.close()` 已成为稳定生命周期契约：Runner 如果持有 HTTP session、子进程句柄或其它异步资源，必须通过该入口显式收口；`AsyncAgent` 会在单次 `run/run_messages/run_and_wait` 生命周期结束时统一调用它
+- `AsyncOpenAIRunner` 创建会话时启用 `trust_env=True`，读取 `HTTP_PROXY`、`HTTPS_PROXY` 与 `NO_PROXY`；请求保留默认 TLS 验证，托管环境的代理与密钥绑定无需写入模型配置。
 - `AsyncOpenAIRunner` 当前把 `aiohttp.ClientSession` 提升为 Runner 实例级资源：同一 `AsyncAgent` run 内的多轮 iteration 会复用同一个 session/connector；只有 run 结束或显式 `runner.close()` 时才关闭，下一次调用再按需重建
 - 取消信号不是只在 iteration 首尾观察；Runner 必须在 `session.post(...)` 建连等待、`response.json()` / `response.text()` 读取、429/5xx 重试 sleep，以及 SSE 流的下一块等待期间协作式响应取消
 - 取消一旦命中，上层看到的稳定事实是抛出 `dayu.contracts.cancellation.CancelledError`；不能把这类路径降级成 `error_event`、普通超时重试或吞掉后继续产出 `final_answer`

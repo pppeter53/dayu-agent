@@ -620,13 +620,24 @@ class AsyncOpenAIRunner:
         )
 
     def _ensure_session(self) -> "ClientSession":
-        """确保当前 Runner 拥有可复用的 HTTP session。"""
+        """确保当前 Runner 拥有读取环境代理的可复用 HTTP session。
+
+        Args:
+            无。
+
+        Returns:
+            读取 HTTP_PROXY、HTTPS_PROXY、NO_PROXY 的 aiohttp 会话。
+
+        Raises:
+            ImportError: aiohttp 未安装时抛出。
+        """
 
         session = self._session
         if session is not None and not bool(getattr(session, "closed", False)):
             return session
         aiohttp_module = _require_aiohttp_module()
-        new_session = aiohttp_module.ClientSession()
+        # 托管环境通过代理执行出站策略和密钥绑定；保留 TLS 默认验证。
+        new_session = aiohttp_module.ClientSession(trust_env=True)
         self._session = new_session
         return new_session
 
